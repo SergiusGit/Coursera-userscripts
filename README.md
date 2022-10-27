@@ -2,6 +2,12 @@
 
 This repo contains a pack of userscripts aimed at improving the UX of the [Coursera](https://www.coursera.org) website.
 
+## Installation instruction
+
+1. Install userscript manager ([Violentmonkey](https://violentmonkey.github.io/), [Firemonkey](https://addons.mozilla.org/en-US/firefox/addon/firemonkey/), etc.)
+2. Click on the "Download" button in the table below
+3. Confirm installation in the userscript manager
+
 ## List of scripts
 
 | Userscript        | Link                                                                                                                        |
