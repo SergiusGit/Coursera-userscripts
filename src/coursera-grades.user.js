@@ -9,7 +9,7 @@
 // @match           https://www.coursera.org/degrees/*/home*
 // @icon            https://d3njjcbhbojbot.cloudfront.net/web/images/favicons/favicon-v2-194x194.png
 // @grant           none
-// @version         1.7.2
+// @version         1.7.3
 // @author          Sergius
 // @license         MIT
 // @run-at          document-end
@@ -50,12 +50,11 @@
     let userID = null;
     let degreeID = null;
 
-    const req = new XMLHttpRequest();
-    req.addEventListener("load", () => {
-        userID = JSON.parse(req.responseText).elements[0].id;
-    });
-    req.open("GET", "https://www.coursera.org/api/adminUserPermissions.v1?q=my");
-    req.send();
+    fetch("https://www.coursera.org/api/adminUserPermissions.v1?q=my")
+        .then((res) => res.json())
+        .then((user) => {
+            userID = user.elements[0].id;
+        });
 
     XMLHttpRequest.prototype.realSend = XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.send = function (value) {
@@ -66,6 +65,13 @@
                     const valueJSON = JSON.parse(value);
                     if ("degreeId" in valueJSON) {
                         degreeID = valueJSON["degreeId"];
+                        const idWatcherInterval = setInterval(() => {
+                            if (userID && degreeID) {
+                                XMLHttpRequest.prototype.send = XMLHttpRequest.prototype.realSend;
+                                clearInterval(idWatcherInterval);
+                                getDegreeHomeCalendar(userID, degreeID);
+                            }
+                        }, 250);
                     }
                 }
             },
@@ -74,41 +80,30 @@
         this.realSend(value);
     };
 
-    const idWatcherInterval = setInterval(() => {
-        if (userID && degreeID) {
-            verbose && console.log("Coursera Grades: Credentials retrieved. Requesting grades...");
-            verbose && console.log(`Coursera Grades: User ID = ${userID}, Degree ID = ${degreeID}`);
-            XMLHttpRequest.prototype.send = XMLHttpRequest.prototype.realSend;
-            clearInterval(idWatcherInterval);
-            getDegreeHomeCalendar(userID, degreeID);
-        }
-    }, 250);
-
     function getDegreeHomeCalendar(userID, degreeID) {
+        verbose && console.log("Coursera Grades: Credentials retrieved. Requesting grades...");
+        verbose && console.log(`Coursera Grades: User ID = ${userID}, Degree ID = ${degreeID}`);
         const credentials = {
             userId: userID,
             degreeId: degreeID,
         };
 
-        const xhr = new XMLHttpRequest();
         const url =
             "https://www.coursera.org/api/grpc/degreehome/v1beta1/DegreeHomeCalendarAPI/GetDegreeHomeCalendar";
 
-        xhr.open("POST", url, true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                verbose && console.log("Coursera Grades: Grades retrieved. Preparing DOM...");
-                const json = JSON.parse(xhr.responseText);
-                const calendarItems = json["calendarItems"];
-                checkDOM(calendarItems);
-            }
-        };
-        const data = JSON.stringify(credentials);
-        xhr.send(data);
+        fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json;charset=utf-8",
+            },
+            body: JSON.stringify(credentials),
+        })
+            .then((res) => res.json())
+            .then((calendarItems) => checkDOM(calendarItems["calendarItems"]));
     }
 
     function checkDOM(calendarItems) {
+        verbose && console.log("Coursera Grades: Grades retrieved. Preparing DOM...");
         const intervalID = setInterval(() => {
             const homePanel = document.querySelector("div#cds-react-aria-1-panel-home").firstChild
                 .firstChild;
@@ -275,7 +270,7 @@
             }
         });
 
-        verbose && console.log("Coursera Grades: Done.");
+        verbose && console.log("Coursera Grades: Done");
     }
 
     function togglePassedModules(tbody, btn) {
@@ -283,7 +278,8 @@
         const passedModulesRows = document.querySelectorAll(".passedModulesTable");
         if (passedModulesRows.length == 0) {
             const passedModulesStyle = document.createElement("style");
-            passedModulesStyle.innerText = "tr.passedModulesTable:hover { color: red; }";
+            passedModulesStyle.innerText =
+                "tr.passedModulesTable:hover { background-color: rgba(255, 0, 0, 0.1); }";
             document.body.appendChild(passedModulesStyle);
             isLoadingPassed = true;
             loadPassedModules(tbody, btn);
@@ -301,59 +297,60 @@
     }
 
     function loadPassedModules(tbody, btn) {
-        const req = new XMLHttpRequest();
-        req.addEventListener("load", () => {
-            const passedModules = JSON.parse(req.responseText).elements[0].passed;
-            let sectionHeader = document.createElement("tr");
-            let sectionHeaderCell = document.createElement("td");
-            sectionHeaderCell.innerText = "Passed Modules";
-            sectionHeaderCell.style.fontWeight = "bold";
-            sectionHeaderCell.style["padding-top"] = "1rem";
-            sectionHeader.classList.add("passedModulesTable");
-            sectionHeader.appendChild(sectionHeaderCell);
-            tbody.appendChild(sectionHeader);
-
-            let xhrs = [];
-
-            passedModules.forEach((module) => {
-                if (!modulesBlocklist.includes(module.id)) {
-                    const gradeReq = new XMLHttpRequest();
-                    gradeReq.addEventListener("load", () => {
-                        const grade = JSON.parse(gradeReq.responseText).elements[0].grade;
-                        let tr = document.createElement("tr");
-                        let tdName = document.createElement("td");
-                        tdName.innerText = module.name;
-                        tdName.colSpan = 2;
-                        tdName.style.padding = "0 0.5rem";
-                        let tdGrade = document.createElement("td");
-                        tdGrade.innerText = (grade * 100).toFixed(2) + "%";
-                        tdGrade.style.padding = "0 0.5rem";
-                        tr.appendChild(tdName);
-                        tr.appendChild(tdGrade);
-                        tr.classList.add("passedModulesTable");
-                        tbody.appendChild(tr);
-                        xhrs.pop();
-                        if (xhrs.length == 0) {
-                            isLoadingPassed = false;
-                            btn.innerText = "Hide ended modules";
-                        }
-                    });
-                    gradeReq.open(
-                        "GET",
-                        `https://www.coursera.org/api/onDemandCoursePresentGrades.v1/${userID}~${module.id}?fields=grade`
-                    );
-                    xhrs.push(gradeReq);
-                    gradeReq.send();
-                }
-            });
-        });
-        req.open(
-            "GET",
+        fetch(
             `https://www.coursera.org/api/degreeLearnerCourseStates.v1/${userID}~${degreeID.replace(
                 "base",
                 "base!"
             )}`
-        );
-        req.send();
+        )
+            .then((res) => res.json())
+            .then((jsonPassed) => {
+                verbose && console.log("Coursera Grades: Loading past modules...");
+                const passedModules = jsonPassed.elements[0].passed;
+
+                let sectionHeader = document.createElement("tr");
+                let sectionHeaderCell = document.createElement("td");
+                sectionHeaderCell.innerText = "Passed Modules";
+                sectionHeaderCell.style.fontWeight = "bold";
+                sectionHeaderCell.style["padding-top"] = "1rem";
+                sectionHeader.classList.add("passedModulesTable");
+                sectionHeader.appendChild(sectionHeaderCell);
+                tbody.appendChild(sectionHeader);
+
+                let fetches = [];
+
+                passedModules.forEach((module) => {
+                    if (!modulesBlocklist.includes(module.id)) {
+                        let f = fetch(
+                            `https://www.coursera.org/api/onDemandCoursePresentGrades.v1/${userID}~${module.id}?fields=grade`
+                        )
+                            .then((res) => res.json())
+                            .then((jsonGrade) => {
+                                const grade = jsonGrade.elements[0].grade;
+                                let tr = document.createElement("tr");
+                                let tdName = document.createElement("td");
+                                let anchor = document.createElement("a");
+                                anchor.innerText = module.name;
+                                anchor.href = `https://www.coursera.org/learn/${module.slug}/home/welcome`;
+                                tdName.colSpan = 2;
+                                tdName.style.padding = "0 0.5rem";
+                                tdName.appendChild(anchor);
+                                let tdGrade = document.createElement("td");
+                                tdGrade.innerText = (grade * 100).toFixed(2) + "%";
+                                tdGrade.style.padding = "0 0.5rem";
+                                tr.appendChild(tdName);
+                                tr.appendChild(tdGrade);
+                                tr.classList.add("passedModulesTable");
+                                tbody.appendChild(tr);
+                            });
+                        fetches.push(f);
+                    }
+                });
+                Promise.all(fetches).then(() => {
+                    verbose && console.log("Coursera Grades: Past modules loaded");
+                    isLoadingPassed = false;
+                    btn.innerText = "Hide ended modules";
+                });
+            });
     }
 })();
