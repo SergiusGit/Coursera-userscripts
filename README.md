@@ -26,4 +26,4 @@ This repo contains a pack of userscripts aimed at improving the UX of the [Cours
 
 ### Coursera degree assignments and grades
 
-[Coursera degree grades](src/coursera-grades.user.js) userscript creates a table on the degree [home page](https://www.coursera.org/degrees/bachelor-of-science-computer-science-london/home/) with all graded assignments for current modules taken by students who study for a degree via Coursera.
+[Degree grades](src/coursera-grades.user.js) userscript creates a table on the degree home page with all graded assignments for current modules taken by students who study for a degree via Coursera.
