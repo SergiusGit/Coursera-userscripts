@@ -9,7 +9,7 @@
 // @include         *://www.coursera.org/learn/*
 // @icon            https://d3njjcbhbojbot.cloudfront.net/web/images/favicons/favicon-v2-194x194.png
 // @grant           none
-// @version         1.2
+// @version         1.2.1
 // @author          Sergius
 // @license         MIT
 // @run-at          document-end
@@ -38,10 +38,6 @@
 
     const hideTopBar = false;
     const regex = /coursera.org\/learn\/.*\/lecture/i;
-    const defStyles = {
-        banner: "block",
-        container: "66px",
-    };
 
     /**
      * Takes highlighted subtitles and places them in the div block under the
@@ -84,13 +80,14 @@
         const videoNav = document.querySelector(".ItemLecture_Video_Notes_Navigation");
 
         if (regex.test(window.location.href)) {
+            const video = document.querySelector("video");
+
             if (hideTopBar) {
                 banner.style.display = "none";
                 container.style.top = "0px";
             }
 
             if (!videoNav.querySelector(".speed-nav")) {
-                const video = document.querySelector("video");
                 const speedDownBtnX2 = document.createElement("button");
                 speedDownBtnX2.classList.add("speed-nav");
                 speedDownBtnX2.innerHTML = "◄◄";
@@ -139,9 +136,6 @@
                 });
                 videoNav.appendChild(speedUpBtnX2);
             }
-        } else if (hideTopBar && banner) {
-            banner.style.display = defStyles.banner;
-            container.style.top = defStyles.container;
         }
     }, intervalSize * 1000);
 })();
