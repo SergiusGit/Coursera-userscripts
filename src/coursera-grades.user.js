@@ -9,7 +9,7 @@
 // @match           https://www.coursera.org/degrees/*/home*
 // @icon            https://d3njjcbhbojbot.cloudfront.net/web/images/favicons/favicon-v2-194x194.png
 // @grant           none
-// @version         1.7.4
+// @version         1.7.5
 // @author          Sergius
 // @license         MIT
 // @run-at          document-end
@@ -241,7 +241,7 @@
 
         const changeExperienceBtn = document
             .evaluate(
-                "//button[contains(., 'Return to classic experience')]",
+                "//button[contains(., 'experience')]",
                 document,
                 null,
                 XPathResult.ANY_TYPE,
