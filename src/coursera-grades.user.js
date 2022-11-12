@@ -9,7 +9,7 @@
 // @match           https://www.coursera.org/degrees/*/home*
 // @icon            https://d3njjcbhbojbot.cloudfront.net/web/images/favicons/favicon-v2-194x194.png
 // @grant           none
-// @version         1.7.3
+// @version         1.7.4
 // @author          Sergius
 // @license         MIT
 // @run-at          document-end
@@ -239,8 +239,15 @@
             tbody.style[property] = tableStyle["tbody"][property];
         }
 
-        const buttons = document.querySelectorAll(".css-14n42al button");
-        const changeExperienceBtn = buttons[buttons.length - 1];
+        const changeExperienceBtn = document
+            .evaluate(
+                "//button[contains(., 'Return to classic experience')]",
+                document,
+                null,
+                XPathResult.ANY_TYPE,
+                null
+            )
+            .iterateNext();
         let togglePassedModulesBtn = document.createElement("button");
         togglePassedModulesBtn.innerText = "Load ended modules";
         togglePassedModulesBtn.classList.add(...changeExperienceBtn.classList);
