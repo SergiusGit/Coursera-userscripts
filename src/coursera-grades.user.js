@@ -9,7 +9,7 @@
 // @match           https://www.coursera.org/degrees/*/home*
 // @icon            https://d3njjcbhbojbot.cloudfront.net/web/images/favicons/favicon-v2-194x194.png
 // @grant           none
-// @version         1.7.5
+// @version         1.7.6
 // @author          Sergius
 // @license         MIT
 // @run-at          document-end
@@ -123,7 +123,8 @@
             const assignment = calendarItems[i]["assignment"];
             if (
                 assignment &&
-                assignment["gradingWeight"] !== 0 &&
+                (assignment["gradingWeight"] !== 0 ||
+                    assignment["assignmentType"] === "staffGraded") &&
                 !modulesBlocklist.includes(assignment["courseId"])
             ) {
                 tableData.push({
