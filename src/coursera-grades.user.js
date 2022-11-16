@@ -9,7 +9,7 @@
 // @match           https://www.coursera.org/degrees/*/home*
 // @icon            https://d3njjcbhbojbot.cloudfront.net/web/images/favicons/favicon-v2-194x194.png
 // @grant           none
-// @version         1.7.6
+// @version         1.8
 // @author          Sergius
 // @license         MIT
 // @run-at          document-end
@@ -18,31 +18,50 @@
 (() => {
     const modulesBlocklist = ["5Xzmk6wnEei80xI77XeCqA"];
 
+    const css = `
+        .grades-table {
+            width: 100%;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-collapse: collapse;
+            box-shadow: rgba(31, 31, 31, 0.12) 0px 1px 6px, rgba(31, 31, 31, 0.12) 0px 1px 4px;
+            color: rgb(31, 31, 31);
+            background-color: rgb(255, 255, 255);
+        }
+
+        .grades-table > table {
+            width: 100%;
+        }
+
+        .grades-table th {
+            padding: 0.5rem;
+            border-bottom: 1px solid rgb(229, 231, 232);
+        }
+
+        .grades-table td {
+            padding: 0.5rem;
+            vertical-align: top;
+        }
+
+        .grades-table tr.passed-modules-table:hover:not(.passed-header) {
+            background-color: rgba(255, 0, 0, 0.1);
+        }
+
+        .grades-table .passed-modules-table.hidden {
+            display: none;
+        }
+
+        .grades-table .passed-header {
+            font-weight: bold;
+            padding-top: 1rem;
+        }
+    `;
+
     const verbose = false;
 
-    const tableStyle = {
-        div: {
-            width: "100%",
-            padding: "1.5rem",
-            "margin-bottom": "1.5rem",
-            "border-collapse": "collapse",
-            "box-shadow": "rgba(31, 31, 31, 0.12) 0px 1px 6px, rgba(31, 31, 31, 0.12) 0px 1px 4px",
-            color: "rgb(31, 31, 31)",
-            "background-color": "rgb(255, 255, 255)",
-        },
-        table: {
-            width: "100%",
-        },
-        thead: {},
-        tbody: {},
-        th: {
-            padding: "0.5rem",
-            "border-bottom": "1px solid rgb(229, 231, 232)",
-        },
-        td: {
-            padding: "0.5rem",
-        },
-    };
+    const styleBlock = document.createElement("style");
+    styleBlock.innerText = css;
+    document.head.appendChild(styleBlock);
 
     let isLoadingPassed = false;
     let isPassedHidden = true;
@@ -65,9 +84,9 @@
                     const valueJSON = JSON.parse(value);
                     if ("degreeId" in valueJSON) {
                         degreeID = valueJSON["degreeId"];
+                        XMLHttpRequest.prototype.send = XMLHttpRequest.prototype.realSend;
                         const idWatcherInterval = setInterval(() => {
-                            if (userID && degreeID) {
-                                XMLHttpRequest.prototype.send = XMLHttpRequest.prototype.realSend;
+                            if (userID) {
                                 clearInterval(idWatcherInterval);
                                 getDegreeHomeCalendar(userID, degreeID);
                             }
@@ -158,15 +177,9 @@
             let th = document.createElement("th");
             th["scope"] = "col";
             th.innerText = text;
-            for (const property in tableStyle["th"]) {
-                th.style[property] = tableStyle["th"][property];
-            }
             tr.appendChild(th);
         });
         thead.appendChild(tr);
-        for (const property in tableStyle["thead"]) {
-            thead.style[property] = tableStyle["thead"][property];
-        }
         grades.appendChild(thead);
 
         let tbody = document.createElement("tbody");
@@ -179,9 +192,7 @@
                 moduleA.href = "https://www.coursera.org" + entry["courseUrl"];
                 moduleA.innerText = entry["module"];
                 module = document.createElement("td");
-                module.classList.add("gradesTable");
                 module.appendChild(moduleA);
-                module.style["vertical-align"] = "top";
                 module.rowSpan = 1;
             } else {
                 for (r = tbody.rows.length - 1; r >= 0; --r) {
@@ -195,16 +206,18 @@
             assignmentA.href = "https://www.coursera.org" + entry["url"];
             assignmentA.innerText = entry["assignment"];
             let assignment = document.createElement("td");
-            assignment.classList.add("gradesTable");
             assignment.appendChild(assignmentA);
+            if (entry["weight"] == 0) {
+                let zeroWeightLable = document.createElement("span");
+                zeroWeightLable.innerText = " (0 weight)";
+                assignment.appendChild(zeroWeightLable);
+            }
             let grade = document.createElement("td");
-            grade.classList.add("gradesTable");
             grade.innerText = isNaN(entry["grade"]) ? "—" : entry["grade"] + "%";
             moduleTotal[entry["module"]] =
                 (moduleTotal[entry["module"]] || 0) +
                 (isNaN(entry["grade"]) ? 0 : entry["grade"]) * entry["weight"];
             let time = document.createElement("td");
-            time.classList.add("gradesTable");
             time.innerText = entry["time"].substring(0, 10);
 
             if (module) row.appendChild(module);
@@ -224,10 +237,8 @@
                     }
                 }
                 let assignment = document.createElement("td");
-                assignment.classList.add("gradesTable");
                 assignment.innerText = "Module grade";
                 let grade = document.createElement("td");
-                grade.classList.add("gradesTable");
                 grade.innerText = moduleTotal[entry["module"]].toFixed(2) + "%";
                 row.appendChild(assignment);
                 row.appendChild(grade);
@@ -235,10 +246,6 @@
                 tbody.appendChild(row);
             }
         });
-
-        for (const property in tableStyle["tbody"]) {
-            tbody.style[property] = tableStyle["tbody"][property];
-        }
 
         const changeExperienceBtn = document
             .evaluate(
@@ -259,48 +266,29 @@
 
         grades.appendChild(tbody);
 
-        for (const property in tableStyle["table"]) {
-            grades.style[property] = tableStyle["table"][property];
-        }
-
         let container = document.createElement("div");
+        container.classList.add("grades-table");
         container.appendChild(grades);
 
-        for (const property in tableStyle["div"]) {
-            container.style[property] = tableStyle["div"][property];
-        }
-
         homePanel.parentNode.insertBefore(container, homePanel);
-
-        Array.from(document.getElementsByClassName("gradesTable")).forEach((el) => {
-            for (const property in tableStyle["td"]) {
-                el.style[property] = tableStyle["td"][property];
-            }
-        });
 
         verbose && console.log("Coursera Grades: Done");
     }
 
     function togglePassedModules(tbody, btn) {
         if (isLoadingPassed) return;
-        const passedModulesRows = document.querySelectorAll(".passedModulesTable");
+        const passedModulesRows = document.querySelectorAll(".passed-modules-table");
         if (passedModulesRows.length == 0) {
-            const passedModulesStyle = document.createElement("style");
-            passedModulesStyle.innerText =
-                "tr.passedModulesTable:hover { background-color: rgba(255, 0, 0, 0.1); }";
-            document.body.appendChild(passedModulesStyle);
             isLoadingPassed = true;
             loadPassedModules(tbody, btn);
         } else {
             if (isPassedHidden) {
                 btn.innerText = "Show ended modules";
-                passedModulesRows.forEach((el) => (el.style.display = "none"));
-                isPassedHidden = false;
             } else {
                 btn.innerText = "Hide ended modules";
-                passedModulesRows.forEach((el) => (el.style.display = "table-row"));
-                isPassedHidden = true;
             }
+            passedModulesRows.forEach((el) => el.classList.toggle("hidden"));
+            isPassedHidden = !isPassedHidden;
         }
     }
 
@@ -319,9 +307,8 @@
                 let sectionHeader = document.createElement("tr");
                 let sectionHeaderCell = document.createElement("td");
                 sectionHeaderCell.innerText = "Passed Modules";
-                sectionHeaderCell.style.fontWeight = "bold";
-                sectionHeaderCell.style["padding-top"] = "1rem";
-                sectionHeader.classList.add("passedModulesTable");
+                sectionHeaderCell.classList.add("passed-header");
+                sectionHeader.classList.add("passed-modules-table", "passed-header");
                 sectionHeader.appendChild(sectionHeaderCell);
                 tbody.appendChild(sectionHeader);
 
@@ -341,14 +328,12 @@
                                 anchor.innerText = module.name;
                                 anchor.href = `https://www.coursera.org/learn/${module.slug}/home/welcome`;
                                 tdName.colSpan = 2;
-                                tdName.style.padding = "0 0.5rem";
                                 tdName.appendChild(anchor);
                                 let tdGrade = document.createElement("td");
                                 tdGrade.innerText = (grade * 100).toFixed(2) + "%";
-                                tdGrade.style.padding = "0 0.5rem";
                                 tr.appendChild(tdName);
                                 tr.appendChild(tdGrade);
-                                tr.classList.add("passedModulesTable");
+                                tr.classList.add("passed-modules-table");
                                 tbody.appendChild(tr);
                             });
                         fetches.push(f);
