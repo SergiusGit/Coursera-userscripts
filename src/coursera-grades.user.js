@@ -9,14 +9,15 @@
 // @match           https://www.coursera.org/degrees/*/home*
 // @icon            https://d3njjcbhbojbot.cloudfront.net/web/images/favicons/favicon-v2-194x194.png
 // @grant           none
-// @version         1.8
+// @version         1.8.2
 // @author          Sergius
 // @license         MIT
 // @run-at          document-end
 // ==/UserScript==
 
 (() => {
-    const modulesBlocklist = ["5Xzmk6wnEei80xI77XeCqA"];
+    const modulesBlocklistById = ["5Xzmk6wnEei80xI77XeCqA"];
+    const modulesBlocklistByName = [""];
 
     const css = `
         .grades-table {
@@ -148,9 +149,11 @@
                 assignment &&
                 (assignment["gradingWeight"] !== 0 ||
                     assignment["assignmentType"] === "staffGraded") &&
-                !modulesBlocklist.includes(assignment["courseId"])
+                !modulesBlocklistById.includes(assignment["courseId"]) &&
+                !modulesBlocklistByName.includes(assignment["courseName"])
             ) {
                 tableData.push({
+                    moduleId: assignment["courseId"],
                     module: assignment["courseName"],
                     assignment: assignment["assignmentName"],
                     grade: (assignment["grade"] * 100).toFixed(2),
@@ -190,6 +193,7 @@
         let tbody = document.createElement("tbody");
 
         tableData.forEach((entry, i, data) => {
+            verbose && console.table(entry);
             let row = document.createElement("tr");
             let module = null;
             if (i === 0 || data[i]["module"] !== data[i - 1]["module"]) {
@@ -324,7 +328,11 @@
                 let fetches = [];
 
                 passedModules.forEach((module) => {
-                    if (!modulesBlocklist.includes(module.id)) {
+                    verbose && console.log(module);
+                    if (
+                        !modulesBlocklistById.includes(module.id) &&
+                        !modulesBlocklistByName.includes(module.name)
+                    ) {
                         let f = fetch(
                             `https://www.coursera.org/api/onDemandCoursePresentGrades.v1/${userID}~${module.id}?fields=grade`
                         )
