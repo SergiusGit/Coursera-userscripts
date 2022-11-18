@@ -55,6 +55,10 @@
             font-weight: bold;
             padding-top: 1rem;
         }
+
+        .grades-table .dotted {
+            text-decoration: underline dotted;
+        }
     `;
 
     const verbose = false;
@@ -151,6 +155,7 @@
                     assignment: assignment["assignmentName"],
                     grade: (assignment["grade"] * 100).toFixed(2),
                     time: assignment["dueAtTime"],
+                    gradedAt: assignment["gradedAtTime"],
                     weight: assignment["gradingWeight"],
                     courseUrl: assignment["courseUrl"],
                     url: assignment["assignmentUrl"],
@@ -217,8 +222,12 @@
             moduleTotal[entry["module"]] =
                 (moduleTotal[entry["module"]] || 0) +
                 (isNaN(entry["grade"]) ? 0 : entry["grade"]) * entry["weight"];
+            if (entry["gradedAt"]) {
+                grade.title = `Graded at ${new Date(entry["gradedAt"]).toLocaleString()}`;
+                grade.classList.add("dotted");
+            }
             let time = document.createElement("td");
-            time.innerText = entry["time"].substring(0, 10);
+            time.innerText = new Date(entry["time"]).toLocaleDateString();
 
             if (module) row.appendChild(module);
             row.appendChild(assignment);
