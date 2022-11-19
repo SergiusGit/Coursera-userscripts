@@ -9,7 +9,7 @@
 // @match           https://www.coursera.org/degrees/*/home*
 // @icon            https://d3njjcbhbojbot.cloudfront.net/web/images/favicons/favicon-v2-194x194.png
 // @grant           none
-// @version         1.8.2
+// @version         1.8.3
 // @author          Sergius
 // @license         MIT
 // @run-at          document-end
@@ -59,6 +59,10 @@
 
         .grades-table .dotted {
             text-decoration: underline dotted;
+        }
+
+        .grades-table :is(.right-align, th:nth-child(3), th:nth-child(4)) {
+            text-align:right;
         }
     `;
 
@@ -180,7 +184,7 @@
 
         let thead = document.createElement("thead");
         let tr = document.createElement("tr");
-        let thCells = ["Module", "Assignment", "Grade", "Deadline"];
+        let thCells = ["Module", "Assignment", "Weight", "Grade", "Deadline"];
         thCells.forEach((text) => {
             let th = document.createElement("th");
             th["scope"] = "col";
@@ -216,11 +220,10 @@
             assignmentA.innerText = entry["assignment"];
             let assignment = document.createElement("td");
             assignment.appendChild(assignmentA);
-            if (entry["weight"] == 0) {
-                let zeroWeightLable = document.createElement("span");
-                zeroWeightLable.innerText = " (0 weight)";
-                assignment.appendChild(zeroWeightLable);
-            }
+            let weight = document.createElement("td");
+            weight.innerText = Math.round(entry["weight"] * 1000) / 10 + "%";
+            weight.title = entry["weight"] * 100 + "%";
+            weight.classList.add("right-align");
             let grade = document.createElement("td");
             grade.innerText = isNaN(entry["grade"]) ? "—" : entry["grade"] + "%";
             moduleTotal[entry["module"]] =
@@ -230,11 +233,13 @@
                 grade.title = `Graded at ${new Date(entry["gradedAt"]).toLocaleString()}`;
                 grade.classList.add("dotted");
             }
+            grade.classList.add("right-align");
             let time = document.createElement("td");
             time.innerText = new Date(entry["time"]).toLocaleDateString();
 
             if (module) row.appendChild(module);
             row.appendChild(assignment);
+            row.appendChild(weight);
             row.appendChild(grade);
             row.appendChild(time);
 
@@ -251,8 +256,10 @@
                 }
                 let assignment = document.createElement("td");
                 assignment.innerText = "Module grade";
+                assignment.colSpan = 2;
                 let grade = document.createElement("td");
                 grade.innerText = moduleTotal[entry["module"]].toFixed(2) + "%";
+                grade.classList.add("right-align");
                 row.appendChild(assignment);
                 row.appendChild(grade);
 
@@ -344,10 +351,11 @@
                                 let anchor = document.createElement("a");
                                 anchor.innerText = module.name;
                                 anchor.href = `https://www.coursera.org/learn/${module.slug}/home/welcome`;
-                                tdName.colSpan = 2;
+                                tdName.colSpan = 3;
                                 tdName.appendChild(anchor);
                                 let tdGrade = document.createElement("td");
                                 tdGrade.innerText = (grade * 100).toFixed(2) + "%";
+                                tdGrade.classList.add("right-align");
                                 tr.appendChild(tdName);
                                 tr.appendChild(tdGrade);
                                 tr.classList.add("passed-modules-table");
