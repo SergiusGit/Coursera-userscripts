@@ -9,7 +9,7 @@
 // @match           https://www.coursera.org/degrees/*/home*
 // @icon            https://d3njjcbhbojbot.cloudfront.net/web/images/favicons/favicon-v2-194x194.png
 // @grant           none
-// @version         1.8.3
+// @version         1.8.4
 // @author          Sergius
 // @license         MIT
 // @run-at          document-end
@@ -222,7 +222,10 @@
             assignment.appendChild(assignmentA);
             let weight = document.createElement("td");
             weight.innerText = Math.round(entry["weight"] * 1000) / 10 + "%";
-            weight.title = entry["weight"] * 100 + "%";
+            if (Math.round(entry["weight"] * 1000) / 10 !== entry["weight"] * 100) {
+                weight.title = entry["weight"] * 100 + "%";
+                weight.classList.add("dotted");
+            }
             weight.classList.add("right-align");
             let grade = document.createElement("td");
             grade.innerText = isNaN(entry["grade"]) ? "—" : entry["grade"] + "%";
