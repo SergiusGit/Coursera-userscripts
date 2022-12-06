@@ -9,7 +9,7 @@
 // @match           https://www.coursera.org/degrees/*/home*
 // @icon            https://d3njjcbhbojbot.cloudfront.net/web/images/favicons/favicon-v2-194x194.png
 // @grant           none
-// @version         1.8.5
+// @version         1.8.6
 // @author          Sergius
 // @license         MIT
 // @run-at          document-end
@@ -133,8 +133,7 @@
     function checkDOM(calendarItems) {
         verbose && console.log("Coursera Grades: Grades retrieved. Preparing DOM...");
         const intervalID = setInterval(() => {
-            const homePanel = document.querySelector("div#cds-react-aria-2-panel-home").firstChild
-                .firstChild;
+            const homePanel = document.querySelector("#main").firstChild.firstChild.firstChild;
 
             if (homePanel) {
                 verbose && console.log("Coursera Grades: Drawing table...");
